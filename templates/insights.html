@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block title %}Insights - AP Electricity Dashboard{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1>Key Insights & Findings</h1>
+    
+    <!-- Key Metrics Row -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="metric-card">
+                <div class="metric-value">{{ growth }}%</div>
+                <div class="metric-label">Total Growth (2015-2023)</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="metric-card">
+                <div class="metric-value">{{ peak_month }}</div>
+                <div class="metric-label">Peak Month</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="metric-card">
+                <div class="metric-value">{{ avg_yearly_growth }}%</div>
+                <div class="metric-label">Avg Yearly Growth</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="metric-card">
+                <div class="metric-value">{{ volatility }}%</div>
+                <div class="metric-label">Volatility</div>
+            </div>
+        </div>
+    </div>
+
+    <hr class="my-4">
+
+    <!-- Statistics and Recommendations -->
+    <div class="row">
+        <div class="col-lg-6">
+            <h3>Key Statistics</h3>
+            <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                <div style="margin-bottom: 12px;"><strong>Mean Demand:</strong> {{ "{:.0f}".format(summary.mean) }} MU</div>
+                <div style="margin-bottom: 12px;"><strong>Median:</strong> {{ "{:.0f}".format(summary.median) }} MU</div>
+                <div style="margin-bottom: 12px;"><strong>Std Dev:</strong> {{ "{:.0f}".format(summary.std) }} MU</div>
+                <div style="margin-bottom: 12px;"><strong>Min:</strong> {{ "{:.0f}".format(summary.min) }} MU</div>
+                <div style="margin-bottom: 12px;"><strong>Max:</strong> {{ "{:.0f}".format(summary.max) }} MU</div>
+                <div><strong>Range:</strong> {{ "{:.0f}".format(summary.max - summary.min) }} MU</div>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <h3>Business Implications</h3>
+            <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                <ol>
+                    <li><strong>Capacity Planning</strong> - +12% growth requires infrastructure expansion</li>
+                    <li><strong>Peak Management</strong> - Prepare for 30% higher demand May-June</li>
+                    <li><strong>Staffing</strong> - Adjust workforce for peak/off-peak seasons</li>
+                    <li><strong>Maintenance</strong> - Schedule during low-demand periods</li>
+                    <li><strong>Weather Correlation</strong> - Monitor temperature forecasts</li>
+                    <li><strong>Holiday Planning</strong> - Lower demand presents maintenance opportunity</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+
+    <hr class="my-4">
+
+    <!-- Future Outlook -->
+    <h3>Future Outlook</h3>
+    <div class="alert alert-info" style="border-left: 4px solid #0066cc;">
+        <div class="row">
+            <div class="col-lg-6">
+                <h5>Forecast Summary</h5>
+                <ul>
+                    <li><strong>Current (2023):</strong> {{ "{:.0f}".format(summary.mean) }} MU</li>
+                    <li><strong>Peak Month:</strong> {{ peak_month }} ({{ "{:.0f}".format(peak_value) }} MU)</li>
+                    <li><strong>8-Year Growth:</strong> {{ growth }}%</li>
+                    <li><strong>Annual Growth Rate:</strong> {{ avg_yearly_growth }}%</li>
+                </ul>
+            </div>
+            <div class="col-lg-6">
+                <h5>Recommended Actions</h5>
+                <ul>
+                    <li>Invest in capacity for projected growth</li>
+                    <li>Monitor weather patterns for demand correlation</li>
+                    <li>Optimize operations during peak seasons</li>
+                    <li>Plan maintenance during off-peak periods</li>
+                    <li>Review forecasts quarterly for updates</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

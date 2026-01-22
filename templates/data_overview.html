@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block title %}Data Overview - AP Electricity Dashboard{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1>Data Overview</h1>
+    
+    <div class="alert alert-success" role="alert">
+        Data loaded successfully!
+    </div>
+
+    <!-- Metrics Row -->
+    {% if summary %}
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="metric-card">
+                <div class="metric-value">{{ "{:,.0f}".format(summary.records) }}</div>
+                <div class="metric-label">Total Records</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="metric-card">
+                <div class="metric-value">{{ "{:.0f}".format(summary.mean) }}</div>
+                <div class="metric-label">Average Demand</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="metric-card">
+                <div class="metric-value">{{ "{:.0f}".format(summary.max) }}</div>
+                <div class="metric-label">Max Demand</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="metric-card">
+                <div class="metric-value">{{ "{:.1f}".format(summary.std) }}</div>
+                <div class="metric-label">Std Deviation</div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <hr class="my-4">
+
+    <!-- Data Tables -->
+    <div class="row">
+        <div class="col-lg-8">
+            <h3>Dataset Preview</h3>
+            <div class="table-responsive" style="background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                {{ data_table | safe }}
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <h3>Summary Statistics</h3>
+            <div style="background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                <div style="font-size: 13px;">
+                    <strong>Mean:</strong> {{ "{:.0f}".format(summary.mean) }} MU<br>
+                    <strong>Median:</strong> {{ "{:.0f}".format(summary.median) }} MU<br>
+                    <strong>Std Dev:</strong> {{ "{:.0f}".format(summary.std) }} MU<br>
+                    <strong>Min:</strong> {{ "{:.0f}".format(summary.min) }} MU<br>
+                    <strong>Max:</strong> {{ "{:.0f}".format(summary.max) }} MU
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <hr class="my-4">
+
+    <!-- Full Statistics Table -->
+    <h3>Detailed Statistics</h3>
+    <div class="table-responsive" style="background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        {{ stats | safe }}
+    </div>
+</div>
+{% endblock %}

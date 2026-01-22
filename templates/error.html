@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block title %}Error - AP Electricity Dashboard{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center mt-5">
+        <div class="col-md-6">
+            <div class="alert alert-danger" role="alert" style="border-left: 4px solid #d9534f;">
+                <h4 class="alert-heading">⚠️ Error</h4>
+                <p>{{ message }}</p>
+                <hr>
+                <a href="/" class="btn btn-primary">← Back to Home</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

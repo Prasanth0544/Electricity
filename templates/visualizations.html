@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+
+{% block title %}Visualizations - AP Electricity Dashboard{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1>Exploratory Data Analysis</h1>
+    
+    <!-- Tabs -->
+    <ul class="nav nav-tabs" id="vizTabs" role="tablist" style="margin-bottom: 20px;">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="trends-tab" data-bs-toggle="tab" data-bs-target="#trends" type="button" role="tab" aria-controls="trends" aria-selected="true">Trends</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="seasonality-tab" data-bs-toggle="tab" data-bs-target="#seasonality" type="button" role="tab" aria-controls="seasonality" aria-selected="false">Seasonality</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="correlations-tab" data-bs-toggle="tab" data-bs-target="#correlations" type="button" role="tab" aria-controls="correlations" aria-selected="false">Correlations</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="heatmap-tab" data-bs-toggle="tab" data-bs-target="#heatmap" type="button" role="tab" aria-controls="heatmap" aria-selected="false">Heatmap</button>
+        </li>
+    </ul>
+
+    <!-- Tab Content -->
+    <div class="tab-content" id="vizTabContent">
+        <!-- Trends Tab -->
+        <div class="tab-pane fade show active" id="trends" role="tabpanel" aria-labelledby="trends-tab">
+            <div class="row">
+                <div class="col-lg-6">
+                    {% if visualizations['01_demand_over_time.png'] %}
+                    <img src="{{ visualizations['01_demand_over_time.png'] }}" class="img-fluid rounded" alt="Demand over time">
+                    {% endif %}
+                    <p class="text-center text-muted mt-2"><small>Electricity Demand Over Time (2015-2023)</small></p>
+                </div>
+                <div class="col-lg-6">
+                    {% if visualizations['03_yearly_comparison.png'] %}
+                    <img src="{{ visualizations['03_yearly_comparison.png'] }}" class="img-fluid rounded" alt="Yearly comparison">
+                    {% endif %}
+                    <p class="text-center text-muted mt-2"><small>Average Demand by Year</small></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Seasonality Tab -->
+        <div class="tab-pane fade" id="seasonality" role="tabpanel" aria-labelledby="seasonality-tab">
+            <div class="row">
+                <div class="col-lg-6">
+                    {% if visualizations['02_monthly_seasonality.png'] %}
+                    <img src="{{ visualizations['02_monthly_seasonality.png'] }}" class="img-fluid rounded" alt="Monthly seasonality">
+                    {% endif %}
+                    <p class="text-center text-muted mt-2"><small>Monthly Seasonality</small></p>
+                </div>
+                <div class="col-lg-6">
+                    {% if visualizations['04_monthly_pattern.png'] %}
+                    <img src="{{ visualizations['04_monthly_pattern.png'] }}" class="img-fluid rounded" alt="Monthly pattern">
+                    {% endif %}
+                    <p class="text-center text-muted mt-2"><small>Average Demand by Month</small></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Correlations Tab -->
+        <div class="tab-pane fade" id="correlations" role="tabpanel" aria-labelledby="correlations-tab">
+            <div class="row">
+                <div class="col-lg-6">
+                    {% if visualizations['05_temperature_correlation.png'] %}
+                    <img src="{{ visualizations['05_temperature_correlation.png'] }}" class="img-fluid rounded" alt="Temperature correlation">
+                    {% endif %}
+                    <p class="text-center text-muted mt-2"><small>Temperature Correlation</small></p>
+                </div>
+                <div class="col-lg-6">
+                    {% if visualizations['06_holiday_impact.png'] %}
+                    <img src="{{ visualizations['06_holiday_impact.png'] }}" class="img-fluid rounded" alt="Holiday impact">
+                    {% endif %}
+                    <p class="text-center text-muted mt-2"><small>Holiday Impact</small></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Heatmap Tab -->
+        <div class="tab-pane fade" id="heatmap" role="tabpanel" aria-labelledby="heatmap-tab">
+            <div class="row">
+                <div class="col-lg-12">
+                    {% if visualizations['07_heatmap_monthly.png'] %}
+                    <img src="{{ visualizations['07_heatmap_monthly.png'] }}" class="img-fluid rounded" alt="Heatmap">
+                    {% endif %}
+                    <p class="text-center text-muted mt-2"><small>Demand Heatmap: Year vs Month</small></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+(function() {
+    'use strict';
+    
+    function initTabs() {
+        const tabButtons = document.querySelectorAll('#vizTabs button[data-bs-toggle="tab"]');
+        if (tabButtons.length === 0) return;
+        
+        tabButtons.forEach(function(button) {
+            button.addEventListener('click', function(event) {
+                event.preventDefault();
+                event.stopPropagation();
+                
+                try {
+                    const targetId = this.getAttribute('data-bs-target');
+                    if (!targetId) return;
+                    
+                    const targetPane = document.querySelector(targetId);
+                    if (!targetPane) return;
+                    
+                    // Remove active from all tabs
+                    document.querySelectorAll('#vizTabs .nav-link').forEach(function(link) {
+                        link.classList.remove('active');
+                        if (link.hasAttribute('aria-selected')) {
+                            link.setAttribute('aria-selected', 'false');
+                        }
+                    });
+                    
+                    // Remove active from all panes
+                    document.querySelectorAll('#vizTabContent .tab-pane').forEach(function(pane) {
+                        pane.classList.remove('show', 'active');
+                    });
+                    
+                    // Add active to clicked tab and pane
+                    this.classList.add('active');
+                    this.setAttribute('aria-selected', 'true');
+                    targetPane.classList.add('show', 'active');
+                } catch(error) {
+                    console.error('Tab switch error:', error);
+                }
+            });
+        });
+    }
+    
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initTabs);
+    } else {
+        initTabs();
+    }
+})();
+</script>
+{% endblock %}
+{% endblock %}

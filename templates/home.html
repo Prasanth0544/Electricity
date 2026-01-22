@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block title %}Home - AP Electricity Dashboard{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-lg-10">
+            <h1 class="display-4">
+                Electricity Demand Analysis Dashboard
+            </h1>
+            <p class="lead">Andhra Pradesh | 2015-2023 Analysis</p>
+        </div>
+    </div>
+
+    <!-- Metrics Row -->
+    {% if summary %}
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="metric-card">
+                <div class="metric-value">{{ "{:,.0f}".format(summary.records) }}</div>
+                <div class="metric-label">Total Records</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="metric-card">
+                <div class="metric-value">{{ "{:.0f}".format(summary.mean) }} MU</div>
+                <div class="metric-label">Average Demand</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="metric-card">
+                <div class="metric-value">{{ "{:.0f}".format(summary.max) }} MU</div>
+                <div class="metric-label">Peak Demand</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="metric-card">
+                <div class="metric-value">{{ "{:.0f}".format(summary.min) }} MU</div>
+                <div class="metric-label">Minimum Demand</div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <hr class="my-5">
+
+    <!-- Overview Section -->
+    <div class="row mt-4">
+        <div class="col-lg-6">
+            <div class="content-box">
+                <h2>Project Overview</h2>
+                <p>This dashboard provides comprehensive analysis of electricity demand patterns in Andhra Pradesh with machine learning forecasting.</p>
+                <ul class="list-unstyled mt-3">
+                    <li><strong>Data Exploration</strong> - Understand demand trends and patterns</li>
+                    <li><strong>Visualizations</strong> - 10+ charts for insights</li>
+                    <li><strong>Forecasting</strong> - Prophet & XGBoost models</li>
+                    <li><strong>Predictions</strong> - 365-day future forecast</li>
+                </ul>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="alert alert-info">
+                <h5>Quick Navigation</h5>
+                <p>Use the menu above to explore:</p>
+                <ul class="mb-0">
+                    <li><strong>Data Overview</strong> - Detailed statistics</li>
+                    <li><strong>Visualizations</strong> - All charts and heatmaps</li>
+                    <li><strong>Forecasting</strong> - Model comparisons</li>
+                    <li><strong>Insights</strong> - Key findings & recommendations</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

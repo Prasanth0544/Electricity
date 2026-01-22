@@ -1,0 +1,246 @@
+{% extends "base.html" %}
+
+{% block title %}Forecasting - AP Electricity Dashboard{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1>Machine Learning Forecasting</h1>
+    
+    <!-- Model Selection Tabs -->
+    <ul class="nav nav-tabs" id="modelTabs" role="tablist" style="margin-bottom: 20px;">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="prophet-tab" data-bs-toggle="tab" data-bs-target="#prophet" type="button" role="tab" aria-controls="prophet" aria-selected="true">
+                Prophet Model
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="xgboost-tab" data-bs-toggle="tab" data-bs-target="#xgboost" type="button" role="tab" aria-controls="xgboost" aria-selected="false">
+                XGBoost Model
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="comparison-tab" data-bs-toggle="tab" data-bs-target="#comparison" type="button" role="tab" aria-controls="comparison" aria-selected="false">
+                Comparison
+            </button>
+        </li>
+    </ul>
+
+    <!-- Tab Content -->
+    <div class="tab-content" id="modelTabContent">
+        <!-- Prophet Tab -->
+        <div class="tab-pane fade show active" id="prophet" role="tabpanel" aria-labelledby="prophet-tab">
+            <div class="row mb-4">
+                <div class="col-lg-6">
+                    <div class="alert alert-info" style="border-left: 4px solid #0066cc;">
+                        <h5>Prophet Model Strengths:</h5>
+                        <ul>
+                            <li>Long-term trend forecasting</li>
+                            <li>Seasonal decomposition</li>
+                            <li>Holiday effects handling</li>
+                            <li>Confidence intervals</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="alert alert-info" style="border-left: 4px solid #0066cc;">
+                        <h5>Best For:</h5>
+                        <ul>
+                            <li>Strategic planning</li>
+                            <li>Capacity planning</li>
+                            <li>6-12 month outlook</li>
+                            <li>Trend analysis</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            {% if prophet_available %}
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <div class="metric-card">
+                        <div class="metric-value">{{ "{:.0f}".format(summary.mean) }}</div>
+                        <div class="metric-label">Latest Actual (2023)</div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="metric-card">
+                        <div class="metric-value">{{ "{:.0f}".format(prophet_stats.avg_2024) }}</div>
+                        <div class="metric-label">2024 Forecast</div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="metric-card">
+                        <div class="metric-value">{{ "{:.0f}".format(prophet_stats.avg_2025) }}</div>
+                        <div class="metric-label">2025 Forecast</div>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="alert alert-warning">Prophet forecast data not available</div>
+            {% endif %}
+        </div>
+
+        <!-- XGBoost Tab -->
+        <div class="tab-pane fade" id="xgboost" role="tabpanel" aria-labelledby="xgboost-tab">
+            <div class="row mb-4">
+                <div class="col-lg-6">
+                    <div class="alert alert-info" style="border-left: 4px solid #0066cc;">
+                        <h5>XGBoost Model Strengths:</h5>
+                        <ul>
+                            <li>Non-linear pattern capture</li>
+                            <li>Short-term accuracy</li>
+                            <li>Fast predictions</li>
+                            <li>Feature importance</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="alert alert-info" style="border-left: 4px solid #0066cc;">
+                        <h5>Best For:</h5>
+                        <ul>
+                            <li>Operational planning</li>
+                            <li>Day-ahead forecasting</li>
+                            <li>1-30 day outlook</li>
+                            <li>Tactical decisions</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            {% if xgboost_available %}
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="metric-card">
+                        <div class="metric-value">7.83</div>
+                        <div class="metric-label">Test MAE</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="metric-card">
+                        <div class="metric-value">9.72</div>
+                        <div class="metric-label">Test RMSE</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="metric-card">
+                        <div class="metric-value">~96%</div>
+                        <div class="metric-label">Accuracy</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="metric-card">
+                        <div class="metric-value">30</div>
+                        <div class="metric-label">Days Forecast</div>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="alert alert-warning">XGBoost forecast data not available</div>
+            {% endif %}
+        </div>
+
+        <!-- Comparison Tab -->
+        <div class="tab-pane fade" id="comparison" role="tabpanel" aria-labelledby="comparison-tab">
+            <table class="table table-striped" style="background: white;">
+                <thead style="background-color: #0066cc; color: white;">
+                    <tr>
+                        <th>Aspect</th>
+                        <th>Prophet</th>
+                        <th>XGBoost</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Time Horizon</strong></td>
+                        <td>6-12 months</td>
+                        <td>1-30 days</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Seasonality</strong></td>
+                        <td>Excellent</td>
+                        <td>Good</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Speed</strong></td>
+                        <td>Fast ⚡</td>
+                        <td>Medium ⚡⚡</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Confidence Intervals</strong></td>
+                        <td>Yes ✓</td>
+                        <td>No ✗</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Best Use</strong></td>
+                        <td>Strategic Planning</td>
+                        <td>Operational</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Accuracy Focus</strong></td>
+                        <td>Trend Accuracy</td>
+                        <td>Point Accuracy</td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <div class="alert alert-info" style="border-left: 4px solid #0066cc;">
+                💡 <strong>Best Practice:</strong> Use both models - Prophet for strategic planning, XGBoost for operations
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+(function() {
+    'use strict';
+    
+    function initTabs() {
+        const tabButtons = document.querySelectorAll('#modelTabs button[data-bs-toggle="tab"]');
+        if (tabButtons.length === 0) return;
+        
+        tabButtons.forEach(function(button) {
+            button.addEventListener('click', function(event) {
+                event.preventDefault();
+                event.stopPropagation();
+                
+                try {
+                    const targetId = this.getAttribute('data-bs-target');
+                    if (!targetId) return;
+                    
+                    const targetPane = document.querySelector(targetId);
+                    if (!targetPane) return;
+                    
+                    // Remove active from all tabs
+                    document.querySelectorAll('#modelTabs .nav-link').forEach(function(link) {
+                        link.classList.remove('active');
+                        if (link.hasAttribute('aria-selected')) {
+                            link.setAttribute('aria-selected', 'false');
+                        }
+                    });
+                    
+                    // Remove active from all panes
+                    document.querySelectorAll('#modelTabContent .tab-pane').forEach(function(pane) {
+                        pane.classList.remove('show', 'active');
+                    });
+                    
+                    // Add active to clicked tab and pane
+                    this.classList.add('active');
+                    this.setAttribute('aria-selected', 'true');
+                    targetPane.classList.add('show', 'active');
+                } catch(error) {
+                    console.error('Tab switch error:', error);
+                }
+            });
+        });
+    }
+    
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initTabs);
+    } else {
+        initTabs();
+    }
+})();
+</script>
+{% endblock %}
+{% endblock %}
