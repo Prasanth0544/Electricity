@@ -16,17 +16,8 @@ pip install -r requirements.txt
 
 ### 2. Download Dataset
 
-The dataset is automatically downloaded when you run:
+The dataset is downloaded and prepared when you run the data loading script:
 
-```bash
-python app.py
-```
-
-Or if you've already downloaded it, the scripts will use the cached version.
-
-### 3. Run Analysis Pipeline
-
-#### Step 1: Load and Explore Data
 ```bash
 python 01_data_loading.py
 ```
@@ -68,7 +59,7 @@ This will:
 
 ```
 visulization/
-├── app.py                      # Dataset download script
+├── app.py                      # Streamlit Dashboard App
 ├── 01_data_loading.py          # Data loading and exploration
 ├── 02_eda_visualization.py     # EDA and visualizations
 ├── 03_ml_forecasting.py        # ML forecasting models

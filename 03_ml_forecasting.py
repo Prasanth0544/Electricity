@@ -78,7 +78,7 @@ def prophet_forecast(df, periods=365):
         # Use last known temperature or average for future dates
         last_temp = df['temp'].iloc[-1]
         future = future.merge(temp_data, on='ds', how='left')
-        future['temp'].fillna(last_temp, inplace=True)
+        future['temp'] = future['temp'].fillna(last_temp)
     
     # Make predictions
     print(f"Generating forecast for next {periods} days...")
@@ -321,13 +321,18 @@ if __name__ == "__main__":
     
     # Prophet Forecast
     if PROPHET_AVAILABLE:
-        model_prophet, forecast_prophet = prophet_forecast(df, periods=365)
+        # Forecast until end of 2025
+        # Current data ends May 2023.
+        # Days to end of 2023 (~230) + 2024 (366) + 2025 (365) ~= 961 days
+        # Let's forecast 1000 days to be safe
+        periods = 1000
+        model_prophet, forecast_prophet = prophet_forecast(df, periods=periods)
         if model_prophet is not None:
             plot_prophet_forecast(model_prophet, forecast_prophet)
             plot_prophet_components(model_prophet, forecast_prophet)
             
             # Save forecast
-            forecast_prophet_df = forecast_prophet[['ds', 'yhat', 'yhat_lower', 'yhat_upper']].tail(365)
+            forecast_prophet_df = forecast_prophet[['ds', 'yhat', 'yhat_lower', 'yhat_upper']].tail(periods)
             forecast_prophet_df.set_index('ds', inplace=True)
             forecast_prophet_df.to_csv("data/prophet_forecast.csv")
             print("[OK] Saved Prophet forecast to data/prophet_forecast.csv")

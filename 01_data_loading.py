@@ -8,32 +8,41 @@ import numpy as np
 import os
 import shutil
 from pathlib import Path
+import kagglehub
 
-# Dataset path (from kagglehub cache)
-DATASET_PATH = r"C:\Users\prasa\.cache\kagglehub\datasets\ashtonronald\ap-dataset\versions\16"
+# Project data path
 PROJECT_DATA_PATH = "data"
 
 def copy_dataset_to_project():
-    """Copy dataset files to project data folder for easier access"""
+    """Download and copy dataset files to project data folder for easier access"""
     os.makedirs(PROJECT_DATA_PATH, exist_ok=True)
     
-    # Copy main dataset file
-    source_file = os.path.join(DATASET_PATH, "finalAPData.csv")
-    dest_file = os.path.join(PROJECT_DATA_PATH, "finalAPData.csv")
-    
-    if os.path.exists(source_file):
-        shutil.copy2(source_file, dest_file)
-        print(f"[OK] Copied finalAPData.csv to {PROJECT_DATA_PATH}/")
-    else:
-        print(f"[WARNING] {source_file} not found")
-    
-    # Also copy the detailed data.csv if needed
-    source_file2 = os.path.join(DATASET_PATH, "data.csv")
-    dest_file2 = os.path.join(PROJECT_DATA_PATH, "data.csv")
-    
-    if os.path.exists(source_file2):
-        shutil.copy2(source_file2, dest_file2)
-        print(f"[OK] Copied data.csv to {PROJECT_DATA_PATH}/")
+    print("Downloading dataset from Kaggle...")
+    try:
+        # Download latest version
+        path = kagglehub.dataset_download("ashtonronald/ap-dataset")
+        print(f"Dataset downloaded to: {path}")
+        
+        # Copy main dataset file
+        source_file = os.path.join(path, "finalAPData.csv")
+        dest_file = os.path.join(PROJECT_DATA_PATH, "finalAPData.csv")
+        
+        if os.path.exists(source_file):
+            shutil.copy2(source_file, dest_file)
+            print(f"[OK] Copied finalAPData.csv to {PROJECT_DATA_PATH}/")
+        else:
+            print(f"[WARNING] {source_file} not found")
+        
+        # Also copy the detailed data.csv if needed
+        source_file2 = os.path.join(path, "data.csv")
+        dest_file2 = os.path.join(PROJECT_DATA_PATH, "data.csv")
+        
+        if os.path.exists(source_file2):
+            shutil.copy2(source_file2, dest_file2)
+            print(f"[OK] Copied data.csv to {PROJECT_DATA_PATH}/")
+            
+    except Exception as e:
+        print(f"[ERROR] Failed to download dataset: {e}")
 
 def load_data(file_path="data/finalAPData.csv"):
     """Load the dataset"""
@@ -114,8 +123,8 @@ def prepare_data(df):
     # Handle missing values
     if df.isnull().sum().sum() > 0:
         print("[OK] Filling missing values with forward fill...")
-        df.ffill(inplace=True)
-        df.bfill(inplace=True)  # Fill any remaining with backward fill
+        df = df.ffill()
+        df = df.bfill()  # Fill any remaining with backward fill
     
     # Rename energy column for easier access
     if 'Energy Required (MU)' in df.columns:

@@ -69,7 +69,7 @@ python 03_ml_forecasting.py
 
 ```
 visulization/
-├── app.py                      # Dataset download (already done!)
+├── app.py                      # Streamlit Dashboard App
 ├── 01_data_loading.py          # ✅ Run this first
 ├── 02_eda_visualization.py     # 📊 Run this second
 ├── 03_ml_forecasting.py        # 🤖 Run this third

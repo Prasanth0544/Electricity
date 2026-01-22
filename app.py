@@ -11,10 +11,13 @@ import seaborn as sns
 import warnings
 from PIL import Image
 import os
+from prophet import Prophet
+import plotly.graph_objects as go
+import plotly.express as px
 
 warnings.filterwarnings('ignore')
 
-# Configure Streamlit page
+# Configure Streamlit page with optimized settings
 st.set_page_config(
     page_title="AP Electricity Demand Dashboard",
     page_icon="⚡",
@@ -22,195 +25,302 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Custom styling
+# Classic, professional styling with optimized performance
 st.markdown("""
     <style>
-    .main { padding: 0rem 1rem; }
-    .metric-card { 
-        background-color: #f0f2f6; 
-        padding: 20px; 
-        border-radius: 10px; 
-        text-align: center;
+    * {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .main {
+        padding: 1rem 2rem;
+        background-color: #f8f9fa;
+    }
+    h1 {
+        color: #1a3a52;
+        border-bottom: 3px solid #0066cc;
+        padding-bottom: 10px;
+        margin-bottom: 20px;
+    }
+    h2 {
+        color: #2c5aa0;
+        margin-top: 20px;
+        margin-bottom: 15px;
+    }
+    .stMetric {
+        background-color: white;
+        padding: 15px;
+        border-radius: 8px;
+        border-left: 4px solid #0066cc;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .metric-value {
+        font-size: 24px;
+        font-weight: bold;
+        color: #0066cc;
+    }
+    .metric-label {
+        font-size: 14px;
+        color: #666;
+    }
+    .stTabs [data-baseweb="tab-list"] button {
+        background-color: #f0f0f0;
+        color: #333;
+        border-radius: 8px 8px 0 0;
+    }
+    .stTabs [aria-selected="true"] {
+        background-color: #0066cc !important;
+        color: white !important;
+    }
+    .info-box {
+        background-color: #e8f4f8;
+        border-left: 4px solid #0066cc;
+        padding: 15px;
+        border-radius: 5px;
+        margin: 10px 0;
+    }
+    .success-box {
+        background-color: #e8f5e9;
+        border-left: 4px solid #4caf50;
+        padding: 15px;
+        border-radius: 5px;
         margin: 10px 0;
     }
     </style>
 """, unsafe_allow_html=True)
 
-# Set style for plots
-plt.style.use('seaborn-v0_8-darkgrid')
-sns.set_palette("husl")
+# Optimized matplotlib style for classic appearance
+plt.style.use('default')
+sns.set_palette("Set2")
+plt.rcParams['figure.facecolor'] = 'white'
+plt.rcParams['axes.facecolor'] = '#f8f9fa'
+plt.rcParams['grid.color'] = '#e0e0e0'
+plt.rcParams['grid.alpha'] = 0.5
 
 # ============================================================================
-# HELPER FUNCTIONS
+# HELPER FUNCTIONS WITH PERFORMANCE OPTIMIZATION
 # ============================================================================
 
-@st.cache_data
+@st.cache_data(ttl=3600)
 def load_data():
-    """Load prepared dataset"""
+    """Load prepared dataset with caching"""
     try:
         df = pd.read_csv('data/prepared_data.csv', index_col=0, parse_dates=True)
         return df
     except FileNotFoundError:
-        st.error("❌ prepared_data.csv not found. Please run 01_data_loading.py first.")
+        st.error("❌ prepared_data.csv not found")
         return None
 
-@st.cache_data
-def load_prophet_forecast():
-    """Load Prophet forecast"""
+@st.cache_data(ttl=3600)
+def get_prophet_forecast():
+    """Load Prophet forecast with caching"""
     try:
-        return pd.read_csv('data/prophet_forecast.csv')
+        df = pd.read_csv('data/prophet_forecast.csv')
+        if 'ds' in df.columns:
+            df['ds'] = pd.to_datetime(df['ds'])
+        return df
     except FileNotFoundError:
         return None
 
-@st.cache_data
-def load_xgboost_forecast():
-    """Load XGBoost forecast"""
+@st.cache_data(ttl=3600)
+def get_xgboost_forecast():
+    """Load XGBoost forecast with caching"""
     try:
-        return pd.read_csv('data/xgboost_forecast.csv')
+        return pd.read_csv('data/xgboost_forecast.csv', index_col=0, parse_dates=True)
     except FileNotFoundError:
         return None
 
+@st.cache_resource
 def load_visualization(filename):
-    """Load visualization image"""
+    """Cache visualization images"""
     path = f'dashboards/visualizations/{filename}'
     if os.path.exists(path):
         return Image.open(path)
     return None
 
+@st.cache_data
+def get_data_summary(df):
+    """Pre-calculate data summaries"""
+    if df is None:
+        return {}
+    return {
+        'mean': df['demand'].mean(),
+        'max': df['demand'].max(),
+        'min': df['demand'].min(),
+        'std': df['demand'].std(),
+        'median': df['demand'].median(),
+        'records': len(df)
+    }
+
 # ============================================================================
-# SIDEBAR NAVIGATION
+# SIDEBAR NAVIGATION - Optimized
 # ============================================================================
 
 st.sidebar.title("🔌 Navigation")
+st.sidebar.markdown("---")
+
 page = st.sidebar.radio(
     "Select a section:",
-    ["🏠 Home", "📊 Data Overview", "📈 Visualizations", "🤖 ML Forecasting", "💡 Insights"]
+    ["🏠 Home", "📊 Data Overview", "📈 Visualizations", "🤖 ML Forecasting", "💡 Insights"],
+    key="page_nav"
 )
 
 st.sidebar.markdown("---")
-st.sidebar.info(
-    "**AP Electricity Demand Analysis**\n\n"
-    "Comprehensive analysis and forecasting of electricity demand patterns "
-    "in Andhra Pradesh using machine learning models.\n\n"
-    "📊 Data: 2015-2023 (3,015 days)\n"
-    "🤖 Models: Prophet & XGBoost"
-)
+st.sidebar.markdown("""
+### 📌 About This Dashboard
+
+**Electricity Demand Analysis**
+- Period: 2015-2023
+- Data Points: 3,015 days
+- Models: Prophet & XGBoost
+- Focus: Trend forecasting
+
+### 🎯 Quick Stats
+- Average Demand: ~220 MU
+- Peak Demand: ~250 MU
+- Growth: +12% YoY
+""")
 
 # ============================================================================
 # PAGE 1: HOME
 # ============================================================================
 
 if page == "🏠 Home":
-    st.title("⚡ Andhra Pradesh Electricity Demand Analysis")
-    st.markdown("### Comprehensive Analysis & ML Forecasting")
+    st.title("⚡ Electricity Demand Analysis Dashboard")
+    st.markdown("### Andhra Pradesh | 2015-2023 Analysis")
     
-    col1, col2, col3 = st.columns(3)
+    # Load data once for the page
+    df = load_data()
     
-    with col1:
-        st.metric("📅 Data Period", "2015-2023", "3,015 Days")
-    with col2:
-        st.metric("📊 Data Points", "3,015", "Complete Dataset")
-    with col3:
-        st.metric("🎯 Models", "2", "Prophet + XGBoost")
+    col1, col2, col3, col4 = st.columns(4)
+    
+    if df is not None:
+        summary = get_data_summary(df)
+        with col1:
+            st.metric("📊 Records", f"{summary['records']:,}")
+        with col2:
+            st.metric("📈 Avg Demand", f"{summary['mean']:.0f} MU")
+        with col3:
+            st.metric("⚡ Peak Demand", f"{summary['max']:.0f} MU")
+        with col4:
+            st.metric("📉 Min Demand", f"{summary['min']:.0f} MU")
     
     st.markdown("---")
     
-    col1, col2 = st.columns(2)
+    col1, col2 = st.columns([1.2, 0.8])
     
     with col1:
         st.subheader("📌 Project Overview")
-        st.write("""
-        This project analyzes electricity demand patterns in Andhra Pradesh 
-        and provides forecasting using advanced machine learning models:
+        st.markdown("""
+        This dashboard provides comprehensive analysis of electricity demand patterns 
+        in Andhra Pradesh with machine learning forecasting.
         
-        ✅ **Data Exploration** - Understand demand trends and patterns
-        ✅ **Visualizations** - 10+ charts for insights
-        ✅ **Forecasting** - Prophet & XGBoost models
-        ✅ **Predictions** - 365-day future forecast
+        **Key Features:**
+        - 📊 Historical data exploration (2015-2023)
+        - 📈 10+ analytical visualizations
+        - 🤖 Prophet & XGBoost forecasting models
+        - 🔮 365-day future predictions
+        - 💡 Actionable business insights
         """)
     
     with col2:
-        st.subheader("🎯 Key Metrics")
-        df = load_data()
-        if df is not None:
-            st.write(f"""
-            - **Average Demand:** {df['demand'].mean():.2f} MU
-            - **Peak Demand:** {df['demand'].max():.2f} MU
-            - **Min Demand:** {df['demand'].min():.2f} MU
-            - **Std Dev:** {df['demand'].std():.2f} MU
-            """)
+        st.subheader("🚀 Navigation")
+        st.markdown("""
+        Use the sidebar menu to:
+        
+        1. **Data Overview** - Explore dataset
+        2. **Visualizations** - View charts
+        3. **ML Forecasting** - Model predictions
+        4. **Insights** - Key findings
+        """)
     
     st.markdown("---")
-    st.subheader("🚀 Quick Navigation")
-    
-    st.info("👈 Use the navigation menu on the left to explore different sections!")
+    st.info("👈 **Use the sidebar navigation** to explore different sections of the dashboard")
 
 # ============================================================================
 # PAGE 2: DATA OVERVIEW
 # ============================================================================
 
 elif page == "📊 Data Overview":
-    st.title("📊 Data Overview & Exploration")
+    st.title("📊 Data Overview")
     
     df = load_data()
     if df is not None:
         st.success("✓ Data loaded successfully!")
         
-        # Summary Statistics
+        # Summary Statistics - Optimized
+        summary = get_data_summary(df)
         col1, col2, col3, col4 = st.columns(4)
         with col1:
-            st.metric("Total Records", f"{len(df):,}")
+            st.metric("Total Records", f"{summary['records']:,}")
         with col2:
-            st.metric("Date Range", f"{df.index.min().strftime('%Y-%m-%d')}")
+            st.metric("Date Range Start", f"{df.index.min().strftime('%Y-%m-%d')}")
         with col3:
-            st.metric("Average Demand", f"{df['demand'].mean():.2f} MU")
+            st.metric("Average Demand", f"{summary['mean']:.0f} MU")
         with col4:
-            st.metric("Max Demand", f"{df['demand'].max():.2f} MU")
+            st.metric("Max Demand", f"{summary['max']:.0f} MU")
         
         st.markdown("---")
         
         # Data Table
-        st.subheader("Dataset Preview")
-        st.dataframe(df.head(10))
+        col1, col2 = st.columns([2, 1])
+        with col1:
+            st.subheader("Dataset Preview")
+            st.dataframe(df.head(10), use_container_width=True)
         
-        # Statistical Summary
-        st.subheader("Statistical Summary")
-        st.write(df.describe())
+        with col2:
+            st.subheader("Statistical Summary")
+            stats_data = pd.DataFrame({
+                'Metric': ['Mean', 'Median', 'Std Dev', 'Min', 'Max'],
+                'Value': [
+                    f"{summary['mean']:.2f}",
+                    f"{summary['median']:.2f}",
+                    f"{summary['std']:.2f}",
+                    f"{summary['min']:.2f}",
+                    f"{summary['max']:.2f}"
+                ]
+            })
+            st.dataframe(stats_data, use_container_width=True, hide_index=True)
         
-        # Missing Values
-        st.subheader("Data Quality")
+        st.markdown("---")
+        
+        # Data Quality Check
+        st.subheader("Data Quality Assessment")
         missing = df.isnull().sum()
         if missing.sum() == 0:
-            st.success("✓ No missing values found!")
+            st.success("✓ No missing values - Dataset is complete")
         else:
             st.warning("⚠️ Missing values detected:")
-            st.write(missing[missing > 0])
+            st.dataframe(missing[missing > 0])
 
 # ============================================================================
 # PAGE 3: VISUALIZATIONS
 # ============================================================================
 
 elif page == "📈 Visualizations":
-    st.title("📈 Exploratory Data Analysis Visualizations")
+    st.title("📈 Exploratory Data Analysis")
     
-    st.info("View all generated visualizations from the EDA phase")
+    st.markdown("View all EDA visualizations from comprehensive analysis")
     
     # Create tabs for different visualizations
-    tab1, tab2, tab3, tab4 = st.tabs(["Trends", "Seasonality", "Correlations", "Heatmaps"])
+    tab1, tab2, tab3, tab4 = st.tabs(["Trends", "Seasonality", "Correlations", "Details"])
     
     with tab1:
-        st.subheader("Demand Trends")
+        st.subheader("Demand Trends (2015-2023)")
         col1, col2 = st.columns(2)
         
         with col1:
             img = load_visualization("01_demand_over_time.png")
             if img:
-                st.image(img, caption="Electricity Demand Over Time (2015-2023)")
+                st.image(img, caption="Electricity Demand Over Time", use_container_width=True)
+            else:
+                st.info("📊 Demand trend visualization")
         
         with col2:
             img = load_visualization("03_yearly_comparison.png")
             if img:
-                st.image(img, caption="Average Demand by Year")
+                st.image(img, caption="Yearly Comparison", use_container_width=True)
+            else:
+                st.info("📊 Yearly comparison visualization")
     
     with tab2:
         st.subheader("Seasonal Patterns")
@@ -219,12 +329,16 @@ elif page == "📈 Visualizations":
         with col1:
             img = load_visualization("02_monthly_seasonality.png")
             if img:
-                st.image(img, caption="Monthly Average Demand")
+                st.image(img, caption="Monthly Seasonality", use_container_width=True)
+            else:
+                st.info("📊 Monthly pattern visualization")
         
         with col2:
             img = load_visualization("04_monthly_pattern.png")
             if img:
-                st.image(img, caption="Average Demand by Month")
+                st.image(img, caption="Monthly Average Pattern", use_container_width=True)
+            else:
+                st.info("📊 Monthly average visualization")
     
     with tab3:
         st.subheader("Correlations & External Factors")
@@ -233,127 +347,188 @@ elif page == "📈 Visualizations":
         with col1:
             img = load_visualization("05_temperature_correlation.png")
             if img:
-                st.image(img, caption="Temperature vs Demand Correlation")
+                st.image(img, caption="Temperature Correlation", use_container_width=True)
+            else:
+                st.info("🌡️ Temperature correlation visualization")
         
         with col2:
             img = load_visualization("06_holiday_impact.png")
             if img:
-                st.image(img, caption="Holiday vs Work Day Impact")
+                st.image(img, caption="Holiday Impact", use_container_width=True)
+            else:
+                st.info("🎉 Holiday impact visualization")
     
     with tab4:
-        st.subheader("Heatmaps")
+        st.subheader("Heatmap Analysis")
         img = load_visualization("07_heatmap_monthly.png")
         if img:
-            st.image(img, caption="Demand Heatmap: Year vs Month")
+            st.image(img, caption="Demand Heatmap: Year vs Month", use_container_width=True)
+        else:
+            st.info("📊 Heatmap visualization")
 
 # ============================================================================
 # PAGE 4: ML FORECASTING
 # ============================================================================
 
 elif page == "🤖 ML Forecasting":
-    st.title("🤖 Machine Learning Forecasting Models")
+    st.title("🤖 Machine Learning Forecasting")
     
-    # Model Selection
+    # Model Selection - Optimized
     model_choice = st.radio(
-        "Select Forecasting Model:",
-        ["Prophet Model", "XGBoost Model", "Model Comparison"],
+        "Select Model:",
+        ["📊 Prophet", "🚀 XGBoost", "📈 Comparison"],
         horizontal=True
     )
     
     st.markdown("---")
     
-    if model_choice == "Prophet Model":
-        st.subheader("📊 Facebook Prophet Forecast")
-        st.write("""
-        **Prophet** is ideal for:
-        - Long-term trend forecasting (6-12 months)
-        - Handling seasonal patterns
-        - Managing special events and holidays
-        - Providing confidence intervals
-        """)
+    if model_choice == "📊 Prophet":
+        st.subheader("Facebook Prophet - Long-term Forecast")
+        
+        col1, col2 = st.columns([1.5, 1])
+        with col1:
+            st.markdown("""
+            **Prophet Model Strengths:**
+            - Long-term trend forecasting
+            - Seasonal decomposition
+            - Holiday effects handling
+            - Confidence intervals
+            """)
+        with col2:
+            st.markdown("""
+            **Best For:**
+            - Strategic planning
+            - Capacity planning
+            - 6-12 month outlook
+            - Trend analysis
+            """)
+        
+        st.markdown("---")
         
         col1, col2 = st.columns(2)
         
         with col1:
             img = load_visualization("08_prophet_forecast.png")
             if img:
-                st.image(img, caption="Prophet Forecast with Confidence Intervals")
+                st.image(img, caption="Prophet Forecast with Confidence Intervals", use_container_width=True)
         
         with col2:
             img = load_visualization("09_prophet_components.png")
             if img:
-                st.image(img, caption="Prophet Components (Trend & Seasonality)")
+                st.image(img, caption="Trend & Seasonality Components", use_container_width=True)
         
-        # Display forecast data
-        prophet_forecast = load_prophet_forecast()
+        # Display forecast data - optimized
+        prophet_forecast = get_prophet_forecast()
         if prophet_forecast is not None:
-            st.subheader("Forecast Data (Next 365 Days)")
-            st.write(f"Total predictions: {len(prophet_forecast)}")
-            st.dataframe(
-                prophet_forecast[['ds', 'yhat', 'yhat_lower', 'yhat_upper']].head(10)
-            )
+            actual_df = load_data()
+            if actual_df is not None:
+                st.markdown("---")
+                st.subheader("📊 Forecast Analysis")
+                
+                # Calculate metrics
+                actual_df['year'] = actual_df.index.year
+                prophet_forecast['ds'] = pd.to_datetime(prophet_forecast['ds'])
+                prophet_forecast['year'] = prophet_forecast['ds'].dt.year
+                
+                base_year = 2023
+                actual_latest = actual_df['demand'].iloc[-1]
+                pred_2024 = prophet_forecast[prophet_forecast['year'] == 2024]['yhat'].mean()
+                pred_2025 = prophet_forecast[prophet_forecast['year'] == 2025]['yhat'].mean()
+                
+                growth_2024 = ((pred_2024 - actual_latest) / actual_latest) * 100
+                growth_2025 = ((pred_2025 - actual_latest) / actual_latest) * 100
+                
+                # Metrics Row
+                m1, m2, m3 = st.columns(3)
+                with m1:
+                    st.metric("Latest Actual", f"{actual_latest:.0f} MU", "2023")
+                with m2:
+                    st.metric("2024 Forecast", f"{pred_2024:.0f} MU", f"{growth_2024:+.1f}%")
+                with m3:
+                    st.metric("2025 Forecast", f"{pred_2025:.0f} MU", f"{growth_2025:+.1f}%")
+                
+                # Forecast Table
+                st.subheader("Forecast Data (2024-2025)")
+                forecast_display = prophet_forecast[['ds', 'yhat', 'yhat_lower', 'yhat_upper']].copy()
+                forecast_display.columns = ['Date', 'Forecast', 'Lower CI', 'Upper CI']
+                st.dataframe(forecast_display.head(30), use_container_width=True, hide_index=True)
     
-    elif model_choice == "XGBoost Model":
-        st.subheader("🚀 XGBoost Forecast")
-        st.write("""
-        **XGBoost** is ideal for:
-        - Short-term forecasting (1-30 days)
-        - Capturing non-linear patterns
-        - Operational/tactical decisions
-        - Feature importance analysis
-        """)
+    elif model_choice == "🚀 XGBoost":
+        st.subheader("XGBoost - Short-term Forecast")
+        
+        col1, col2 = st.columns([1.5, 1])
+        with col1:
+            st.markdown("""
+            **XGBoost Model Strengths:**
+            - Non-linear pattern capture
+            - Short-term accuracy
+            - Fast predictions
+            - Feature importance
+            """)
+        with col2:
+            st.markdown("""
+            **Best For:**
+            - Operational planning
+            - Day-ahead forecasting
+            - 1-30 day outlook
+            - Tactical decisions
+            """)
+        
+        st.markdown("---")
         
         col1, col2 = st.columns([2, 1])
         
         with col1:
             img = load_visualization("10_xgboost_forecast.png")
             if img:
-                st.image(img, caption="XGBoost 30-Day Forecast")
+                st.image(img, caption="30-Day XGBoost Forecast", use_container_width=True)
         
         with col2:
-            st.metric("Test MAE", "7.83 MU", "3.58% Error")
-            st.metric("Test RMSE", "9.72 MU", "High Accuracy")
+            st.metric("Test MAE", "7.83 MU")
+            st.metric("Test RMSE", "9.72 MU")
+            st.metric("Accuracy", "~96%")
         
-        # Display forecast data
-        xgb_forecast = load_xgboost_forecast()
+        # Display XGBoost forecast data
+        xgb_forecast = get_xgboost_forecast()
         if xgb_forecast is not None:
+            st.markdown("---")
             st.subheader("Forecast Data (Next 30 Days)")
-            st.dataframe(xgb_forecast.head(10))
+            st.dataframe(xgb_forecast.head(15), use_container_width=True)
     
-    else:  # Model Comparison
-        st.subheader("📊 Prophet vs XGBoost Comparison")
+    else:  # Comparison
+        st.subheader("📊 Model Comparison")
         
         comparison_data = {
             "Aspect": [
                 "Time Horizon",
-                "Seasonality Handling",
+                "Seasonality",
                 "Speed",
-                "Interpretability",
-                "Best For",
-                "Confidence Intervals"
+                "Confidence Intervals",
+                "Best Use",
+                "Accuracy Focus"
             ],
             "Prophet": [
                 "6-12 months",
                 "Excellent",
-                "Fast",
-                "High",
+                "Fast ⚡",
+                "Yes ✓",
                 "Strategic Planning",
-                "Yes"
+                "Trend Accuracy"
             ],
             "XGBoost": [
                 "1-30 days",
                 "Good",
-                "Medium",
-                "Medium",
-                "Operational Planning",
-                "No"
+                "Medium ⚡⚡",
+                "No ✗",
+                "Operational",
+                "Point Accuracy"
             ]
         }
         
-        comparison_df = pd.DataFrame(comparison_data)
-        st.dataframe(comparison_df, hide_index=True)
+        df_comp = pd.DataFrame(comparison_data)
+        st.dataframe(df_comp, hide_index=True, use_container_width=True)
         
-        st.info("**Recommendation:** Use both models for complementary insights!")
+        st.info("💡 **Best Practice:** Use both models - Prophet for strategic planning, XGBoost for operations")
 
 # ============================================================================
 # PAGE 5: INSIGHTS
@@ -364,71 +539,86 @@ elif page == "💡 Insights":
     
     df = load_data()
     if df is not None:
-        col1, col2, col3 = st.columns(3)
+        summary = get_data_summary(df)
+        
+        # Key Metrics Row
+        col1, col2, col3, col4 = st.columns(4)
         
         with col1:
-            st.success("📈 **Growth Trend**")
             growth = ((df['demand'].iloc[-1] - df['demand'].iloc[0]) / df['demand'].iloc[0] * 100)
-            st.metric("YoY Growth", f"{growth:.1f}%", "Consistent Increase")
+            st.metric("📈 Total Growth", f"{growth:.1f}%", "2015-2023")
         
         with col2:
-            st.info("🌞 **Seasonal Peak**")
             df['month'] = df.index.month
             monthly_avg = df.groupby('month')['demand'].mean()
-            peak_month = monthly_avg.idxmax()
+            peak_month_idx = monthly_avg.idxmax()
             months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-            st.metric("Peak Month", months[peak_month-1], f"{monthly_avg.max():.1f} MU")
+            st.metric("🌞 Peak Month", months[peak_month_idx-1], f"{monthly_avg.max():.0f} MU")
         
         with col3:
-            st.warning("🌡️ **Temperature Effect**")
-            if 'temp' in df.columns:
-                correlation = df['temp'].corr(df['demand'])
-                st.metric("Correlation", f"{correlation:.3f}", "Strong Positive")
+            avg_yearly_growth = growth / 8
+            st.metric("📊 Avg Yearly", f"{avg_yearly_growth:.1f}%", "Growth Rate")
+        
+        with col4:
+            volatility = (summary['std'] / summary['mean']) * 100
+            st.metric("📉 Volatility", f"{volatility:.1f}%", "Coefficient of Variation")
         
         st.markdown("---")
         
-        col1, col2 = st.columns(2)
+        col1, col2 = st.columns([1, 1.2])
         
         with col1:
-            st.subheader("📊 Demand Statistics")
+            st.subheader("📊 Key Statistics")
             stats = {
-                "Mean": f"{df['demand'].mean():.2f} MU",
-                "Median": f"{df['demand'].median():.2f} MU",
-                "Std Dev": f"{df['demand'].std():.2f} MU",
-                "Min": f"{df['demand'].min():.2f} MU",
-                "Max": f"{df['demand'].max():.2f} MU",
-                "Range": f"{df['demand'].max() - df['demand'].min():.2f} MU"
+                "Mean Demand": f"{summary['mean']:.0f} MU",
+                "Median": f"{summary['median']:.0f} MU",
+                "Std Dev": f"{summary['std']:.0f} MU",
+                "Min": f"{summary['min']:.0f} MU",
+                "Max": f"{summary['max']:.0f} MU",
+                "Range": f"{summary['max'] - summary['min']:.0f} MU"
             }
-            for key, value in stats.items():
-                st.write(f"**{key}:** {value}")
+            stats_df = pd.DataFrame(list(stats.items()), columns=['Metric', 'Value'])
+            st.dataframe(stats_df, hide_index=True, use_container_width=True)
         
         with col2:
             st.subheader("🎯 Business Implications")
             st.markdown("""
-            1. **Summer Peak Planning** - Prepare for 30% higher demand in May-June
-            2. **Temperature Sensitivity** - Monitor weather forecasts
-            3. **Seasonal Staffing** - Adjust workforce for peak/off-peak seasons
-            4. **Growth Capacity** - ~12% annual growth requires infrastructure expansion
-            5. **Holiday Planning** - Lower demand during holidays, opportunity for maintenance
+            1. **Capacity Planning** - +12% growth requires infrastructure expansion
+            2. **Peak Management** - Prepare for 30% higher demand May-June
+            3. **Staffing** - Adjust workforce for peak/off-peak seasons
+            4. **Maintenance** - Schedule during low-demand periods
+            5. **Weather Correlation** - Monitor temperature forecasts
+            6. **Holiday Planning** - Lower demand presents opportunity for maintenance
             """)
         
         st.markdown("---")
-        st.subheader("🔮 Future Predictions")
+        st.subheader("🔮 Future Outlook")
         
-        prophet_forecast = load_prophet_forecast()
+        prophet_forecast = get_prophet_forecast()
         if prophet_forecast is not None:
             last_actual = df['demand'].iloc[-1]
-            future_pred = prophet_forecast[prophet_forecast['ds'] > df.index[-1]]['yhat'].values
-            if len(future_pred) > 0:
-                pred_365 = future_pred[-1]
-                expected_change = ((pred_365 - last_actual) / last_actual * 100)
+            future_2025 = prophet_forecast[prophet_forecast['ds'].dt.year == 2025]['yhat'].values
+            if len(future_2025) > 0:
+                pred_2025 = future_2025.mean()
+                expected_change = ((pred_2025 - last_actual) / last_actual * 100)
                 
-                st.write(f"""
-                **Next 365 Days Forecast (Prophet Model):**
-                - Current demand: **{last_actual:.2f} MU**
-                - Predicted (1 year): **{pred_365:.2f} MU**
-                - Expected change: **{expected_change:+.1f}%**
-                """)
+                col1, col2 = st.columns(2)
+                with col1:
+                    st.write(f"""
+                    ### Prophet 12-Month Forecast
+                    - **Current (2023):** {last_actual:.0f} MU
+                    - **Predicted (2025):** {pred_2025:.0f} MU
+                    - **Expected Change:** {expected_change:+.1f}%
+                    """)
+                with col2:
+                    st.write("""
+                    ### Recommended Actions
+                    1. **Invest in capacity** for projected growth
+                    2. **Monitor weather patterns** for demand correlation
+                    3. **Optimize operations** during peak seasons
+                    4. **Plan maintenance** during off-peak periods
+                    5. **Review forecasts** quarterly for updates
+                    """)
 
 # ============================================================================
 # FOOTER
@@ -436,92 +626,8 @@ elif page == "💡 Insights":
 
 st.markdown("---")
 st.markdown("""
-<div style="text-align: center; color: #888; margin-top: 50px;">
-    <p>🔌 Andhra Pradesh Electricity Demand Analysis & Forecasting Dashboard</p>
-    <p>Built with Streamlit | Data: 2015-2023 | Models: Prophet & XGBoost</p>
+<div style="text-align: center; color: #666; margin-top: 40px; padding: 20px; background-color: #f0f0f0; border-radius: 8px;">
+    <p style="margin: 5px 0;"><strong>⚡ Andhra Pradesh Electricity Demand Dashboard</strong></p>
+    <p style="margin: 5px 0; font-size: 12px;">Data: 2015-2023 | Models: Prophet & XGBoost | Built with Streamlit</p>
 </div>
 """, unsafe_allow_html=True)
-import streamlit as st
-import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
-from prophet import Prophet
-# If you have XGBoost code, import it too
-
-st.title("Andhra Pradesh Electricity Demand Analysis & Forecasting")
-
-# Load data
-df = load_data()
-if df is not None:
-    st.header("Key Insights")
-st.write("- Strong summer peaks (Apr–Jun)")
-st.write("- Positive correlation with temperature")
-st.write("- Higher demand on weekdays/non-holidays")
-
-st.header("Demand Over Time")
-fig, ax = plt.subplots(figsize=(12,6))
-df['demand'].plot(ax=ax)
-st.pyplot(fig)
-
-st.header("Temperature vs Demand Correlation")
-fig, ax = plt.subplots()
-sns.scatterplot(x='temp', y='demand', data=df, ax=ax)
-st.pyplot(fig)
-
-# Add more: Upload your existing PNGs or recreate plots here
-st.header("Monthly Seasonality Heatmap")
-# Recreate your heatmap code
-fig, ax = plt.subplots()
-# Your heatmap code...
-st.pyplot(fig)
-
-# Prophet Forecast (interactive)
-st.header("Prophet Forecast")
-# Load your trained model or retrain quickly
-try:
-    df_prophet = df[['Date', 'demand']].copy()
-    df_prophet.columns = ['ds', 'y']
-    m = Prophet(
-        yearly_seasonality=True,
-        weekly_seasonality=True,
-        daily_seasonality=False,
-        seasonality_mode='multiplicative',
-        changepoint_prior_scale=0.05
-    )
-    m.fit(df_prophet)
-    # Forecast and plot
-    future = m.make_future_dataframe(periods=365)
-    forecast = m.predict(future)
-    fig = m.plot(forecast)
-    st.pyplot(fig)
-except Exception as e:
-    st.warning(f"Prophet forecast error: {e}")
-
-st.header("XGBoost 30-Day Forecast")
-try:
-    if os.path.exists('dashboards/visualizations/10_xgboost_forecast.png'):
-        st.image('dashboards/visualizations/10_xgboost_forecast.png')
-    else:
-        st.info("XGBoost forecast visualization not available")
-except Exception as e:
-    st.warning(f"XGBoost forecast error: {e}")
-
-st.header("All Visualizations")
-viz_files = [
-    '01_demand_over_time.png',
-    '02_monthly_seasonality.png',
-    '03_yearly_comparison.png',
-    '04_monthly_pattern.png',
-    '05_temperature_correlation.png',
-    '06_holiday_impact.png',
-    '07_heatmap_monthly.png',
-    '08_prophet_forecast.png',
-    '09_prophet_components.png',
-    '10_xgboost_forecast.png'
-]
-for viz_file in viz_files:
-    path = f'dashboards/visualizations/{viz_file}'
-    if os.path.exists(path):
-        st.image(path, caption=viz_file)
-    else:
-        st.warning(f"Missing: {viz_file}")
